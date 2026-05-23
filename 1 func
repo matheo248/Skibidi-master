@@ -1,0 +1,76 @@
+-- Rayfield Library sicher laden
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua'))()
+
+-- Fenster erstellen
+local Window = Rayfield:CreateWindow({
+   Name = "Skippy Master Tower Defense",
+   LoadingTitle = "Lade Challenge-GUI...",
+   LoadingSubtitle = "by Gemini",
+   ConfigurationSaving = { Enabled = false },
+   KeySystem = false
+})
+
+-- Tab erstellen
+local Tab = Window:CreateTab("Hauptmenü", nil)
+
+-- Button erstellen
+local Button = Tab:CreateButton({
+   Name = "10x Banner ziehen",
+   Callback = function()
+      local player = game.Players.LocalPlayer
+      local leaderstats = player:FindFirstChild("leaderstats")
+      
+      -- Sicherheitscheck: Existieren die leaderstats?
+      if not leaderstats then
+         Rayfield:Notify({
+            Title = "Fehler",
+            Content = "Leaderstats wurden nicht gefunden!",
+            Duration = 3
+         })
+         return
+      end
+
+      -- Exakter Name inklusive Emoji aus den Leaderstats!
+      local paper = leaderstats:FindFirstChild("🧻 Paper")
+
+      if not paper then
+         Rayfield:Notify({
+            Title = "Fehler",
+            Content = "Währung '🧻 Paper' nicht gefunden!",
+            Duration = 4
+         })
+         return
+      end
+
+      -- 1. Check: Hat der Spieler weniger als 450?
+      if paper.Value < 450 then
+         Rayfield:Notify({
+            Title = "Geht nicht!",
+            Content = "Nicht genug! Du hast nur " .. tostring(paper.Value) .. " 🧻. (Brauchst 450)",
+            Duration = 3
+         })
+         return -- Script bricht sofort ab und tut absolut GAR NICHTS weiter
+      end
+
+      -- 2. Wenn er 450 oder mehr hat, wird der Banner-Remote gefeuert
+      local Remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes", 5)
+      if Remotes and Remotes:FindFirstChild("client_server") and Remotes.client_server:FindFirstChild("banner_open") then
+         
+         -- Feuert deinen Remote-Befehl aus der Ferne
+         Remotes.client_server.banner_open:InvokeServer(true)
+         
+         Rayfield:Notify({
+            Title = "Erfolg",
+            Content = "Genug Klopapier! Banner wurde geöffnet.",
+            Duration = 3
+         })
+         
+      else
+         Rayfield:Notify({
+            Title = "Fehler",
+            Content = "Banner-Remote konnte nicht erreicht werden.",
+            Duration = 3
+         })
+      end
+   end,
+})
