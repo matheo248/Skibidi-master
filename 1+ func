@@ -1,0 +1,96 @@
+-- Rayfield Library sicher laden
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua'))()
+
+-- Fenster erstellen
+local Window = Rayfield:CreateWindow({
+   Name = "Skippy Master Tower Defense",
+   LoadingTitle = "Lade Challenge-GUI...",
+   LoadingSubtitle = "by Gemini",
+   ConfigurationSaving = { Enabled = false },
+   KeySystem = false
+})
+
+-- Tab erstellen
+local Tab = Window:CreateTab("Hauptmenü", nil)
+
+-- Variable, um den Status des Toggles zu speichern
+local autoBuyEnabled = false
+
+-- Toggle erstellen (ersetzt den Button)
+local Toggle = Tab:CreateToggle({
+   Name = "Auto-Banner (450er)",
+   CurrentValue = false,
+   Flag = "AutoBannerToggle", -- Einzigartige Flag-ID
+   Callback = function(Value)
+      autoBuyEnabled = Value -- Setzt den Status (true/false)
+      
+      -- Wenn eingeschaltet, starte die Schleife in einem separaten Thread (task.spawn)
+      if autoBuyEnabled then
+         task.spawn(function()
+            while autoBuyEnabled do
+               local player = game.Players.LocalPlayer
+               local leaderstats = player:FindFirstChild("leaderstats")
+               
+               -- Sicherheitscheck: Existieren die leaderstats?
+               if not leaderstats then
+                  Rayfield:Notify({
+                     Title = "Fehler",
+                     Content = "Leaderstats wurden nicht gefunden! Auto-Buy gestoppt.",
+                     Duration = 3
+                  })
+                  autoBuyEnabled = false
+                  break
+               end
+
+               -- Währung abrufen
+               local paper = leaderstats:FindFirstChild("🧻 Paper")
+
+               if not paper then
+                  Rayfield:Notify({
+                     Title = "Fehler",
+                     Content = "Währung '🧻 Paper' nicht gefunden! Auto-Buy gestoppt.",
+                     Duration = 4
+                  })
+                  autoBuyEnabled = false
+                  break
+               end
+
+               -- Check: Hat der Spieler weniger als 450?
+               if paper.Value < 450 then
+                  Rayfield:Notify({
+                     Title = "Gestoppt!",
+                     Content = "Nicht genug Papier! Du hast nur noch " .. tostring(paper.Value) .. " 🧻. Auto-Buy beendet.",
+                     Duration = 4
+                  })
+                  autoBuyEnabled = false -- Schaltet die Logik ab
+                  break -- Bricht die Schleife sofort ab
+               end
+
+               -- Banner-Remote suchen und feuern
+               local Remotes = game:GetService("ReplicatedStorage"):WaitForChild("Remotes", 5)
+               if Remotes and Remotes:FindFirstChild("client_server") and Remotes.client_server:FindFirstChild("banner_open") then
+                  
+                  -- Feuert den Remote-Befehl
+                  Remotes.client_server.banner_open:InvokeServer(true)
+                  
+                  -- Optionale Benachrichtigung bei jedem Kauf (kann nerven, falls es zu schnell geht)
+                  -- Rayfield:Notify({Title = "Erfolg", Content = "Banner wurde geöffnet.", Duration = 1})
+                  
+               else
+                  Rayfield:Notify({
+                     Title = "Fehler",
+                     Content = "Banner-Remote konnte nicht erreicht werden. Auto-Buy gestoppt.",
+                     Duration = 3
+                  })
+                  autoBuyEnabled = false
+                  break
+               end
+               
+               -- WICHTIG: Eine kurze Pause, damit Roblox nicht abstürzt!
+               -- 0.5 bedeutet, er versucht es alle halbe Sekunde. Kannst du anpassen.
+               task.wait(0.5) 
+            end
+         end)
+      end
+   end,
+})
